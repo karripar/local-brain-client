@@ -2,6 +2,7 @@
 
 import { useEffect, useState } from "react";
 import { HealthPill } from "@/src/components/HealthPill";
+import { DeleteDocumentsPanel } from "@/src/components/DeleteDocumentsPanel";
 import { InspectionPanel } from "@/src/components/InspectionPanel";
 import { SearchPanel } from "@/src/components/SearchPanel";
 import { UploadPanel } from "@/src/components/UploadPanel";
@@ -9,14 +10,20 @@ import { useBackendHealth } from "@/src/hooks/useBackendHealth";
 import { useInspection } from "@/src/hooks/useInspection";
 import { useSearch } from "@/src/hooks/useSearch";
 import { useUpload } from "@/src/hooks/useUpload";
+import { deleteDocuments } from "@/src/lib/client/apiClient";
 
 type DashboardTab = "ingest" | "explore";
 
 export const Dashboard = () => {
   const [activeTab, setActiveTab] = useState<DashboardTab>("ingest");
+  const [deleteMessage, setDeleteMessage] = useState<string | null>(null);
+  const [deleteError, setDeleteError] = useState<string | null>(null);
+  const [isDeleting, setIsDeleting] = useState(false);
   const { health, isLoading: isHealthLoading, check } = useBackendHealth();
   const {
     documents,
+    pagination,
+    setPage,
     isLoading: isInspectionLoading,
     error: inspectionError,
     refreshDocuments,
@@ -42,6 +49,37 @@ export const Dashboard = () => {
   useEffect(() => {
     void refreshDocuments();
   }, [refreshDocuments]);
+
+  const handleDeleteDocuments = async (docIds: string[]) => {
+    if (!docIds.length) {
+      return;
+    }
+
+    setIsDeleting(true);
+    setDeleteError(null);
+    setDeleteMessage(null);
+
+    try {
+      const result = await deleteDocuments(docIds);
+      const removedUploads = result.removedUploads?.length
+        ? ` Removed ${result.removedUploads.length} upload file(s).`
+        : "";
+      const skippedUploads = result.skippedUploads?.length
+        ? ` Skipped ${result.skippedUploads.length} upload file(s) that still had chunks.`
+        : "";
+
+      setDeleteMessage(
+        `Deleted ${result.deleted} document(s).${removedUploads}${skippedUploads}`,
+      );
+      await refreshDocuments();
+    } catch (deleteErr) {
+      const message =
+        deleteErr instanceof Error ? deleteErr.message : "Delete failed.";
+      setDeleteError(message);
+    } finally {
+      setIsDeleting(false);
+    }
+  };
 
   return (
     <main className="app-shell">
@@ -118,9 +156,19 @@ export const Dashboard = () => {
 
           <InspectionPanel
             documents={documents}
+            pagination={pagination}
             isLoading={isInspectionLoading}
             error={inspectionError}
             onRefresh={refreshDocuments}
+            onPageChange={setPage}
+          />
+
+          <DeleteDocumentsPanel
+            documents={documents}
+            onDelete={handleDeleteDocuments}
+            isDeleting={isDeleting}
+            error={deleteError}
+            message={deleteMessage}
           />
         </section>
       )}

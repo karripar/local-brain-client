@@ -281,6 +281,69 @@ button:disabled {
   font-size: 0.88rem;
 }
 
+.pagination-bar {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.65rem;
+  align-items: center;
+  justify-content: space-between;
+}
+
+.delete-panel {
+  border-style: dashed;
+}
+
+.delete-panel .panel-head {
+  align-items: flex-start;
+  flex-direction: column;
+}
+
+.delete-panel .panel-head .actions {
+  width: 100%;
+}
+
+.delete-panel .panel-head .actions button {
+  flex: 1 1 0;
+}
+
+.delete-doc-list {
+  display: grid;
+  gap: 0.55rem;
+  max-height: 320px;
+  overflow: auto;
+  padding-right: 0.2rem;
+}
+
+.delete-doc-item {
+  display: grid;
+  grid-template-columns: auto 1fr;
+  gap: 0.75rem;
+  align-items: start;
+  padding: 0.7rem;
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  background: var(--surface-soft);
+}
+
+.delete-doc-item strong {
+  display: block;
+  font-size: 0.92rem;
+}
+
+.delete-doc-item .muted {
+  display: block;
+  margin-top: 0.2rem;
+}
+
+.delete-panel .actions:last-child {
+  width: 100%;
+  justify-content: flex-end;
+}
+
+.delete-panel .actions:last-child button {
+  min-width: 11rem;
+}
+
 .error-text {
   color: var(--danger);
   font-size: 0.9rem;
@@ -293,5 +356,18 @@ button:disabled {
 
   .inline-grid {
     grid-template-columns: 1fr 1fr;
+  }
+
+  .delete-panel .panel-head {
+    flex-direction: row;
+    align-items: center;
+  }
+
+  .delete-panel .panel-head .actions {
+    width: auto;
+  }
+
+  .delete-panel .actions:last-child {
+    width: auto;
   }
 }

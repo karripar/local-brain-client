@@ -3,17 +3,14 @@ import { signedBackendRequest } from "@/src/lib/server/milvusProxy";
 
 export const runtime = "nodejs";
 
-export async function GET(request: Request) {
+export async function DELETE(request: Request) {
   try {
-    const url = new URL(request.url);
-    const queryString = url.searchParams.toString();
-    const path = queryString
-      ? `/api/v1/vector/read?${queryString}`
-      : "/api/v1/vector/read";
+    const body = await request.json();
 
     const result = await signedBackendRequest({
-      method: "GET",
-      path,
+      method: "DELETE",
+      path: "/api/v1/vector/documents",
+      jsonBody: body,
     });
 
     return NextResponse.json(result.data, { status: result.status });
@@ -21,7 +18,7 @@ export async function GET(request: Request) {
     const message =
       error instanceof Error
         ? error.message
-        : "Read request failed unexpectedly.";
+        : "Delete request failed unexpectedly.";
 
     return NextResponse.json({ message }, { status: 500 });
   }

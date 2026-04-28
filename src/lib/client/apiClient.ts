@@ -1,7 +1,9 @@
 import {
   AskResponse,
+  DeleteDocumentsResponse,
   HealthResponse,
   ReadResponse,
+  ReadPagination,
   SearchPayload,
   SearchResponse,
   TextIngestPayload,
@@ -47,6 +49,30 @@ const normalizeDocuments = (value: unknown) => {
   }
 
   return [];
+};
+
+const normalizePagination = (value: unknown): ReadPagination => {
+  const pagination =
+    value && typeof value === "object"
+      ? (value as Record<string, unknown>)
+      : {};
+  const page = Number(pagination.page ?? 1);
+  const limit = Number(pagination.limit ?? 20);
+  const total = Number(pagination.total ?? 0);
+  const totalPages = Number(
+    pagination.totalPages ?? Math.max(1, Math.ceil(total / Math.max(limit, 1))),
+  );
+
+  return {
+    page: Number.isFinite(page) && page > 0 ? Math.floor(page) : 1,
+    limit: Number.isFinite(limit) && limit > 0 ? Math.floor(limit) : 20,
+    total: Number.isFinite(total) && total >= 0 ? Math.floor(total) : 0,
+    totalPages:
+      Number.isFinite(totalPages) && totalPages > 0
+        ? Math.floor(totalPages)
+        : 1,
+    hasMore: Boolean(pagination.hasMore),
+  };
 };
 
 export const uploadPdf = async (payload: {
@@ -135,15 +161,35 @@ export const askQuestion = async (payload: SearchPayload) => {
   return body;
 };
 
-export const fetchDocuments = async () => {
-  const response = await fetch("/api/vector/read", { cache: "no-store" });
+export const fetchDocuments = async (requestOptions?: {
+  page?: number;
+  limit?: number;
+}) => {
+  const searchParams = new URLSearchParams();
+
+  if (typeof requestOptions?.page === "number") {
+    searchParams.set("page", String(requestOptions.page));
+  }
+
+  if (typeof requestOptions?.limit === "number") {
+    searchParams.set("limit", String(requestOptions.limit));
+  }
+
+  const query = searchParams.toString();
+  const response = await fetch(
+    query ? `/api/vector/read?${query}` : "/api/vector/read",
+    {
+      cache: "no-store",
+    },
+  );
   const body = await parseJson<ReadResponse & { message?: string }>(response);
   throwIfNotOk(response, body.message || "Read request failed.");
 
-  const payload = body as unknown as { documents?: unknown };
+  const responseBody = body as unknown as { documents?: unknown };
 
   return {
-    documents: normalizeDocuments(payload.documents),
+    documents: normalizeDocuments(responseBody.documents),
+    pagination: normalizePagination((body as ReadResponse).pagination),
   } as ReadResponse;
 };
 
@@ -157,6 +203,19 @@ export const fetchHealth = async () => {
       message: (body as { message?: string }).message || "Health check failed.",
     };
   }
+
+  return body;
+};
+
+export const deleteDocuments = async (docIds: string[]) => {
+  const response = await fetch("/api/vector/documents", {
+    method: "DELETE",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ doc_ids: docIds }),
+  });
+
+  const body = await parseJson<DeleteDocumentsResponse>(response);
+  throwIfNotOk(response, body.message || "Delete request failed.");
 
   return body;
 };

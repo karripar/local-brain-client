@@ -1,22 +1,29 @@
 "use client";
 
 import { useMemo, useState } from "react";
-import { ReadDocument } from "@/src/lib/client/types";
+import { ReadDocument, ReadPagination } from "@/src/lib/client/types";
 
 type InspectionPanelProps = {
   documents: ReadDocument[];
+  pagination: ReadPagination;
   isLoading: boolean;
   error: string | null;
   onRefresh: () => Promise<void>;
+  onPageChange: (page: number) => void;
 };
 
 export const InspectionPanel = ({
   documents,
+  pagination,
   isLoading,
   error,
   onRefresh,
+  onPageChange,
 }: InspectionPanelProps) => {
-  const safeDocuments = Array.isArray(documents) ? documents : [];
+  const safeDocuments = useMemo(
+    () => (Array.isArray(documents) ? documents : []),
+    [documents],
+  );
   const [sourceFilter, setSourceFilter] = useState("");
   const [textFilter, setTextFilter] = useState("");
 
@@ -78,8 +85,29 @@ export const InspectionPanel = ({
       {error && <p className="error-text">{error}</p>}
 
       <p className="muted">
-        Showing {filtered.length} of {safeDocuments.length} chunks
+        Showing {filtered.length} of {safeDocuments.length} chunks on this page
       </p>
+
+      <div className="pagination-bar">
+        <button
+          className="secondary"
+          onClick={() => onPageChange(Math.max(1, pagination.page - 1))}
+          disabled={isLoading || pagination.page <= 1}
+        >
+          Previous
+        </button>
+        <p className="muted">
+          Page {pagination.page} of {pagination.totalPages} · {pagination.total}{" "}
+          total chunks
+        </p>
+        <button
+          className="secondary"
+          onClick={() => onPageChange(pagination.page + 1)}
+          disabled={isLoading || !pagination.hasMore}
+        >
+          Next
+        </button>
+      </div>
 
       <div className="inspection-list">
         {filtered.slice(0, 120).map((doc) => (

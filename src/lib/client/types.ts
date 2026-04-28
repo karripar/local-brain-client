@@ -47,8 +47,24 @@ export type ReadDocument = {
   source?: string;
 };
 
+export type ReadPagination = {
+  page: number;
+  limit: number;
+  total: number;
+  totalPages: number;
+  hasMore: boolean;
+};
+
 export type ReadResponse = {
   documents: ReadDocument[];
+  pagination: ReadPagination;
+};
+
+export type DeleteDocumentsResponse = {
+  deleted: number;
+  removedUploads?: string[];
+  skippedUploads?: string[];
+  message?: string;
 };
 
 export type HealthResponse = {
