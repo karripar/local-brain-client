@@ -105,6 +105,11 @@ export const DeleteDocumentsPanel = ({
             <span>
               <strong>{doc.doc_id}</strong>
               <span className="muted">{doc.source || "unknown source"}</span>
+              {doc.upload_link && (
+                <button className="link-button" onClick={() => window.open(doc.upload_link, "_blank")}>
+                  View PDF
+                </button>
+              )}
             </span>
           </label>
         ))}

@@ -3,6 +3,8 @@
 import { useMemo, useState } from "react";
 import { ReadDocument, ReadPagination } from "@/src/lib/client/types";
 
+type ExpandedChunks = Set<string>;
+
 type InspectionPanelProps = {
   documents: ReadDocument[];
   pagination: ReadPagination;
@@ -26,6 +28,19 @@ export const InspectionPanel = ({
   );
   const [sourceFilter, setSourceFilter] = useState("");
   const [textFilter, setTextFilter] = useState("");
+  const [expandedChunks, setExpandedChunks] = useState<ExpandedChunks>(
+    new Set(),
+  );
+
+  const toggleChunk = (docId: string) => {
+    const newExpanded = new Set(expandedChunks);
+    if (newExpanded.has(docId)) {
+      newExpanded.delete(docId);
+    } else {
+      newExpanded.add(docId);
+    }
+    setExpandedChunks(newExpanded);
+  };
 
   const filtered = useMemo(() => {
     const sourceNeedle = sourceFilter.trim().toLowerCase();
@@ -110,13 +125,55 @@ export const InspectionPanel = ({
       </div>
 
       <div className="inspection-list">
-        {filtered.slice(0, 120).map((doc) => (
-          <article key={doc.doc_id} className="result-card">
+        {filtered.slice(0, 120).map((doc, index) => (
+          <article
+            key={doc.doc_id}
+            className="result-card"
+            style={{
+              backgroundColor:
+                index % 2 === 0
+                  ? "rgba(59, 130, 246, 0.12)"
+                  : "rgba(59, 130, 246, 0.04)",
+              borderLeft:
+                "4px solid " + (index % 2 === 0 ? "#3b82f6" : "#93c5fd"),
+              padding: "1rem",
+              marginBottom: "1rem",
+              borderRadius: "0.375rem",
+            }}
+          >
             <p className="result-head">
-              <span>{doc.doc_id}</span>
+              <span
+                style={{
+                  fontWeight: "600",
+                  color: index % 2 === 0 ? "#1e40af" : "#1e3a8a",
+                }}
+              >
+                {doc.doc_id}
+              </span>
             </p>
             <p className="muted">Source: {doc.source || "unknown"}</p>
-            <p>{doc.text}</p>
+            <button
+              type="button"
+              className="secondary"
+              onClick={() => toggleChunk(doc.doc_id)}
+              style={{ marginTop: "0.5rem", marginBottom: "0.5rem" }}
+            >
+              {expandedChunks.has(doc.doc_id) ? "Hide" : "View"} chunk
+            </button>
+            {expandedChunks.has(doc.doc_id) && (
+              <p
+                style={{
+                  marginTop: "0.5rem",
+                  fontSize: "0.95em",
+                  backgroundColor: "rgba(255, 255, 255, 0.8)",
+                  padding: "0.75rem",
+                  borderRadius: "0.25rem",
+                  border: "1px solid rgba(0, 0, 0, 0.1)",
+                }}
+              >
+                {doc.text}
+              </p>
+            )}
           </article>
         ))}
       </div>

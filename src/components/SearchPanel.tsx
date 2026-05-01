@@ -3,6 +3,8 @@
 import { FormEvent, useState } from "react";
 import { AskResponse, SearchResponse } from "@/src/lib/client/types";
 
+type ExpandedChunks = Set<string>;
+
 type SearchPanelProps = {
   searchResponse: SearchResponse | null;
   askResponse: AskResponse | null;
@@ -33,6 +35,19 @@ export const SearchPanel = ({
   const [query, setQuery] = useState("");
   const [tenantId, setTenantId] = useState("demo-tenant");
   const [topK, setTopK] = useState(5);
+  const [expandedChunks, setExpandedChunks] = useState<ExpandedChunks>(
+    new Set(),
+  );
+
+  const toggleChunk = (docId: string) => {
+    const newExpanded = new Set(expandedChunks);
+    if (newExpanded.has(docId)) {
+      newExpanded.delete(docId);
+    } else {
+      newExpanded.add(docId);
+    }
+    setExpandedChunks(newExpanded);
+  };
 
   const submitSearch = async (event: FormEvent) => {
     event.preventDefault();
@@ -146,7 +161,19 @@ export const SearchPanel = ({
                 <span>score {result.score?.toFixed(3) ?? "n/a"}</span>
               </p>
               <p className="muted">Source: {result.source || "unknown"}</p>
-              <p>{result.text}</p>
+              <button
+                type="button"
+                className="secondary"
+                onClick={() => toggleChunk(result.doc_id)}
+                style={{ marginTop: "0.5rem", marginBottom: "0.5rem" }}
+              >
+                {expandedChunks.has(result.doc_id) ? "Hide" : "View"} chunk
+              </button>
+              {expandedChunks.has(result.doc_id) && (
+                <p style={{ marginTop: "0.5rem", fontSize: "0.95em" }}>
+                  {result.text}
+                </p>
+              )}
               {result.upload_link && (
                 <a href={result.upload_link} target="_blank" rel="noreferrer">
                   Open source PDF

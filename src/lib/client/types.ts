@@ -45,6 +45,7 @@ export type ReadDocument = {
   doc_id: string;
   text: string;
   source?: string;
+  upload_link?: string;
 };
 
 export type ReadPagination = {
